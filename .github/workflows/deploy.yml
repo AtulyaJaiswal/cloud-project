@@ -23,7 +23,7 @@ jobs:
 
       - name: Build and push Docker image to ACR
         run: |
-          docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 ./app
+          docker build -t mymlacr123.azurecr.io/fastapi-ml:v1
           docker push mymlacr123.azurecr.io/fastapi-ml:v1
 
       - name: Set AKS context
