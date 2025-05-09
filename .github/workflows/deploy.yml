@@ -1,36 +1,36 @@
 name: Deploy to AKS
 
 on:
-push:
-branches: [ main ]
+  push:
+    branches: [ main ]
 
 jobs:
-build-and-deploy:
-runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-  - name: Log in to Azure
-    uses: azure/login@v1
-    with:
-      creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  - name: Log in to ACR
-    run: |
-      az acr login --name mymlacr123
+      - name: Log in to ACR
+        run: |
+          az acr login --name mymlacr123
 
-  - name: Build and push Docker image to ACR
-    run: |
-      docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 ./app
-      docker push mymlacr123.azurecr.io/fastapi-ml:v1
+      - name: Build and push Docker image to ACR
+        run: |
+          docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 ./app
+          docker push mymlacr123.azurecr.io/fastapi-ml:v1
 
-  - name: Set AKS context
-    run: |
-      az aks get-credentials --resource-group ml-rg --name ml-aks-cluster --overwrite-existing
+      - name: Set AKS context
+        run: |
+          az aks get-credentials --resource-group ml-rg --name ml-aks-cluster --overwrite-existing
 
-  - name: Deploy to AKS
-    run: |
-      kubectl apply -f k8s/deployment.yaml
-      kubectl apply -f k8s/service.yaml
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
