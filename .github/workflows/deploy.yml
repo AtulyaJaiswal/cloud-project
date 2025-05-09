@@ -20,7 +20,7 @@ steps:
   - name: Build and Push Docker Image to ACR
     run: |
       az acr login --name mymlacr123
-      docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 .
+      docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 ./app
       docker push mymlacr123.azurecr.io/fastapi-ml:v1
 
   - name: Delete existing ACI (if exists)
