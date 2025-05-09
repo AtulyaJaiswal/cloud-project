@@ -1,36 +1,41 @@
-name: Deploy to AKS
-
 on:
-  push:
-    branches: [ main ]
+push:
+branches:
+- main
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+build-and-deploy:
+runs-on: ubuntu-latest
+steps:
+  - name: Checkout repo
+    uses: actions/checkout@v3
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+  - name: Log in to Azure
+    uses: azure/login@v1
+    with:
+      creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  - name: Build and Push Docker Image to ACR
+    run: |
+      az acr login --name mymlacr123
+      docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 .
+      docker push mymlacr123.azurecr.io/fastapi-ml:v1
 
-      - name: Log in to ACR
-        run: |
-          az acr login --name mymlacr123
+  - name: Delete existing ACI (if exists)
+    run: |
+      az container delete --name fastapi-ml-container --resource-group ml-rg --yes || true
 
-      - name: Build and push Docker image to ACR
-        run: |
-          docker build -t mymlacr123.azurecr.io/fastapi-ml:v1 ./app
-          docker push mymlacr123.azurecr.io/fastapi-ml:v1
-
-      - name: Set AKS context
-        run: |
-          az aks get-credentials --resource-group ml-rg --name ml-aks-cluster --overwrite-existing
-
-      - name: Deploy to AKS
-        run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+  - name: Deploy to Azure Container Instance
+    run: |
+      az container create \
+        --resource-group ml-rg \
+        --name fastapi-ml-container \
+        --image mymlacr123.azurecr.io/fastapi-ml:v1 \
+        --cpu 1 \
+        --memory 1.5 \
+        --registry-login-server mymlacr123.azurecr.io \
+        --registry-username ${{ secrets.ACR_USERNAME }} \
+        --registry-password ${{ secrets.ACR_PASSWORD }} \
+        --dns-name-label fastapi-ml-demo-nishant \
+        --ports 8000 \
+        --os-type Linux
